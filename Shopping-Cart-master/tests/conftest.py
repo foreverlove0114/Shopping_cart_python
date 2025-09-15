@@ -3,12 +3,26 @@ import os
 import sys
 import tempfile
 import sqlite3
+from typing import TYPE_CHECKING
 
-# 修正路径：现在 tests/ 在项目根目录下
-sys.path.insert(0, os.path.dirname(__file__))  # 指向 tests/ 目录
-sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))  # 指向项目根目录
+# 为编辑器提供类型提示
+if TYPE_CHECKING:
+    from flask import Flask
+    from typing import Callable, Any, Tuple
 
+    app: Flask
+    is_valid: Callable[[str, str], bool]
+    allowed_file: Callable[[str], bool]
+    parse: Callable[[list], list]
+    getLoginDetails: Callable[[], Tuple[bool, str, int]]
+
+# 使用绝对路径
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+sys.path.insert(0, project_root)
+
+# 实际导入
 from main import app, is_valid, allowed_file, parse, getLoginDetails
+
 
 @pytest.fixture
 def client():

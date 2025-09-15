@@ -277,6 +277,7 @@ def logout():
     session.pop('email', None)
     return redirect(url_for('root'))
 
+
 def is_valid(email, password):
     con = sqlite3.connect('database.db')
     cur = con.cursor()
