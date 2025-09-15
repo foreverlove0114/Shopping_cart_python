@@ -279,6 +279,10 @@ def logout():
 
 
 def is_valid(email, password):
+    # 先检查空输入（守卫条件）
+    if not email or not password:
+        return False  # 直接返回，不访问数据库
+
     con = sqlite3.connect('database.db')
     cur = con.cursor()
     cur.execute('SELECT email, password FROM users')
