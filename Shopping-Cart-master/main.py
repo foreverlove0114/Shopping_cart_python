@@ -323,8 +323,10 @@ def registrationForm():
     return render_template("register.html")
 
 def allowed_file(filename):
+    if not filename or filename.startswith('.'):
+        return False
     return '.' in filename and \
-            filename.rsplit('.', 1)[1] in ALLOWED_EXTENSIONS
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 def parse(data):
     ans = []
