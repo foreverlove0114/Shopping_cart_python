@@ -274,7 +274,8 @@ def removeFromCart():
 
 @app.route("/logout")
 def logout():
-    session.pop('email', None)
+    # 彻底清除session
+    session.clear()  # 而不是只pop email
     return redirect(url_for('root'))
 
 
