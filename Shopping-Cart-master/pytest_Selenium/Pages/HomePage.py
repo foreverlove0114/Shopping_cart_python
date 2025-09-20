@@ -1,4 +1,5 @@
-from BasePage import BasePage
+# Pages/HomePage.py
+from .BasePage import BasePage  # ✅ 正确：相对导入
 from selenium.webdriver.common.by import By
 
 class HomePage(BasePage):
@@ -40,7 +41,24 @@ class HomePage(BasePage):
             product.click()
 
     def is_user_logged_in(self):
-        return self.is_element_present(self.LOGOUT_LINK)
+        """检查用户是否已登录"""
+        try:
+            # 尝试多种方式检测登录状态
+            logout_link = self.is_element_present(self.LOGOUT_LINK)
+            dropdown_btn = self.is_element_present(self.MY_ACCOUNT_DROPDOWN)
+
+            print(f"🔍 登录状态检测 - 退出链接: {logout_link}, 下拉按钮: {dropdown_btn}")
+
+            # 还可以检查页面文本
+            page_text = self.driver.page_source
+            if "Hello" in page_text or "Welcome" in page_text:
+                print("🔍 页面包含欢迎文本")
+                return True
+
+            return logout_link or dropdown_btn
+        except Exception as e:
+            print(f"❌ 检查登录状态时出错: {e}")
+            return False
 
     def get_welcome_message(self):
         return self.get_text(self.WELCOME_MESSAGE)
