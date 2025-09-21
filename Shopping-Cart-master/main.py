@@ -218,6 +218,7 @@ def productDescription():
 @app.route("/addToCart")
 def addToCart():
     if 'email' not in session:
+        print(f"未登录用户尝试访问购物车")  # 调试
         return redirect(url_for('loginForm'))
     else:
         productId = int(request.args.get('productId'))
@@ -238,6 +239,7 @@ def addToCart():
 @app.route("/cart")
 def cart():
     if 'email' not in session:
+        print(f"未登录用户尝试查看购物车")  # 调试
         return redirect(url_for('loginForm'))
     loggedIn, firstName, noOfItems = getLoginDetails()
     email = session['email']

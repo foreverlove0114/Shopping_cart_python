@@ -36,12 +36,7 @@ class LoginPage(BasePage):
         except:
             return ""
 
-    # LoginPage.py 中添加
-    def clear_email(self):
-        self.find_element(self.EMAIL_INPUT).clear()
 
-    def clear_password(self):
-        self.find_element(self.PASSWORD_INPUT).clear()
 
 
 

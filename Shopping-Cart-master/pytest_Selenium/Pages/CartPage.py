@@ -12,6 +12,8 @@ class CartPage(BasePage):
     CHECKOUT_BUTTON = (By.LINK_TEXT, "Proceed to checkout")
     ITEM_NAMES = (By.ID, "itemNameTag")
     ITEM_PRICES = (By.ID, "itemPrice")
+    REMOVE_BUTTON = (By.CSS_SELECTOR, ".remove-btn")
+    CART_COUNT = (By.ID, "carticon")
 
     def __init__(self, driver):
         super().__init__(driver)

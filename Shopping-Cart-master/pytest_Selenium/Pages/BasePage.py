@@ -1,3 +1,5 @@
+import time
+
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException
@@ -21,6 +23,7 @@ class BasePage:
     def send_keys(self, locator, text):
         element = self.find_element(locator)
         element.clear()
+        time.sleep(1)
         element.send_keys(text)
 
     def get_text(self, locator):

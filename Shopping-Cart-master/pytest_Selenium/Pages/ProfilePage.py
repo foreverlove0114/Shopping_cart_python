@@ -1,4 +1,6 @@
 # Pages/HomePage.py
+import time
+
 from .BasePage import BasePage  # ✅ 正确：相对导入
 from selenium.webdriver.common.by import By
 
@@ -35,6 +37,7 @@ class EditProfilePage(BasePage):
 
     def update_city(self, new_city):
         self.send_keys(self.CITY_INPUT, new_city)
+        time.sleep(1)
         self.click_submit()
 
     def update_first_name(self, new_first_name):
