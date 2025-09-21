@@ -10,7 +10,7 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                git branch: 'main', 
+                git branch: 'master',
                 url: 'https://github.com/foreverlove0114/Shopping_cart_python.git'
             }
         }
