@@ -11,7 +11,7 @@ pipeline {
         stage('Checkout') {
             steps {
                 git branch: 'main', 
-                url: 'https://github.com/your-username/your-ecommerce-repo.git'
+                url: 'https://github.com/foreverlove0114/Shopping_cart_python.git'
             }
         }
         
