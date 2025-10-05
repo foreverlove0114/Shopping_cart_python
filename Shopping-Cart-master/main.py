@@ -8,6 +8,25 @@ UPLOAD_FOLDER = 'static/uploads'
 ALLOWED_EXTENSIONS = set(['jpeg', 'jpg', 'png', 'gif'])
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
+@app.route("/debug-auth")
+def debug_auth():
+    """调试认证状态"""
+    return {
+        'session_data': dict(session),
+        'has_email': 'email' in session,
+        'has_firstName': 'firstName' in session,
+        'logged_in': session.get('logged_in', False),
+        'session_keys': list(session.keys())
+    }
+
+@app.route("/debug-headers")
+def debug_headers():
+    """调试请求头"""
+    return {
+        'headers': dict(request.headers),
+        'cookies': dict(request.cookies)
+    }
+
 def getLoginDetails():
     with sqlite3.connect('database.db') as conn:
         cur = conn.cursor()
@@ -274,11 +293,23 @@ def removeFromCart():
     conn.close()
     return redirect(url_for('root'))
 
+
 @app.route("/logout")
-def logout():
-    # 彻底清除session
-    session.clear()  # 而不是只pop email
-    return redirect(url_for('root'))
+def logout():  # 使用小写函数名更符合Python规范
+    try:
+        # 清除session
+        session.clear()
+
+        # 创建重定向响应
+        response = redirect(url_for('root'))
+
+        # 删除session cookie
+        response.set_cookie('session', '', expires=0)
+
+        return response
+    except Exception as e:
+        print(f"Logout error: {e}")  # 添加错误日志
+        return redirect(url_for('root'))  # 即使出错也重定向
 
 
 def is_valid(email, password):

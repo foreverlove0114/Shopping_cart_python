@@ -173,4 +173,4 @@ def test_unauthorized_cart_access(session):
     response = session.get(f"{BASE_URL}/cart")
     assert response.status_code == 200
     assert "Register here" in response.text
-    print("✓ Unauthorized cart access handled correctly")
+    print("✓ Unauthorized cart access handled c_orrectly")
