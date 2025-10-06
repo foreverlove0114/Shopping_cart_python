@@ -14,7 +14,7 @@ pipeline {
         )
         booleanParam(
             name: 'RUN_E2E_TESTS',
-            defaultValue: false,  // 默认禁用E2E测试
+            defaultValue: true,
             description: 'Run end-to-end Selenium tests'
         )
     }
@@ -23,101 +23,66 @@ pipeline {
         BASE_URL = "${params.BASE_URL}"
         PYTEST_TIMEOUT = "${params.PYTEST_TIMEOUT}"
         RUN_E2E_TESTS = "${params.RUN_E2E_TESTS}"
-        // 添加时间戳环境变量
-        BUILD_TIMESTAMP = sh(script: 'date +"%Y-%m-%d %H:%M:%S"', returnStdout: true).trim()
-    }
-
-    triggers {
-        // 代码推送自动触发
-        pollSCM('H/5 * * * *')  // 每5分钟检查一次代码变更
-        // 或者使用webhook触发（需要在Jenkins中配置GitHub webhook）
-        // githubPush()
-    }
-
-    options {
-        timeout(time: 10, unit: 'MINUTES')  // 构建超时设置
-        timestamps()  // 为所有控制台输出添加时间戳
-        buildDiscarder(logRotator(numToKeepStr: '10'))  // 保留最近10个构建
     }
 
     stages {
         stage('Checkout') {
             steps {
-                timestamps {  // 为这个阶段添加时间戳
-                    git branch: 'master',
-                        url: 'https://github.com/foreverlove0114/Shopping_cart_python.git'
-                    echo "✅ 代码检出完成 - ${env.BUILD_TIMESTAMP}"
-                }
+                git branch: 'master',
+                    url: 'https://github.com/foreverlove0114/Shopping_cart_python.git'
+                echo "✅ 代码检出完成"
             }
         }
 
         stage('Verify Python') {
             steps {
-                timestamps {
-                    bat 'python --version'
-                    bat 'pip --version'
-                    echo "🐍 Python环境验证完成"
-                }
+                bat 'python --version'
+                bat 'pip --version'
             }
         }
 
         stage('Install Dependencies') {
             steps {
-                timestamps {
-                    script {
-                        echo "📦 安装Python依赖包..."
+                script {
+                    echo "📦 安装Python依赖包..."
 
-                        bat '''
-                            echo 安装Flask和测试依赖...
-                            pip install Flask Werkzeug pytest pytest-html pytest-timeout requests beautifulsoup4 selenium webdriver-manager python-dotenv
+                    bat '''
+                        echo 安装Flask和测试依赖...
+                        pip install Flask Werkzeug pytest pytest-html pytest-timeout requests beautifulsoup4 selenium webdriver-manager python-dotenv
 
-                            echo 检查requirement.txt...
-                            if exist requirement.txt (
-                                echo 找到requirement.txt，安装额外依赖...
-                                pip install -r requirement.txt || echo "有些包安装失败，但继续执行..."
-                            ) else (
-                                echo 未找到requirement.txt
-                            )
-                        '''
+                        echo 检查requirement.txt...
+                        if exist requirement.txt (
+                            echo 找到requirement.txt，安装额外依赖...
+                            pip install -r requirement.txt
+                        ) else (
+                            echo 未找到requirement.txt
+                        )
+                    '''
 
-                        // 验证安装
-                        bat 'pip list | findstr -e Flask -e pytest -e requests'
-                        echo "✅ 依赖安装完成"
-                    }
+                    // 验证安装
+                    bat 'pip list | findstr Flask'
+                    bat 'pip list | findstr pytest'
+                    bat 'pip list | findstr requests'
                 }
             }
         }
 
         stage('API Tests') {
             steps {
-                timestamps {
-                    script {
-                        echo "🔌 开始API测试..."
-                        echo "🎯 测试环境: ${BASE_URL}"
-                        echo "⏱️  测试超时: ${PYTEST_TIMEOUT}秒"
+                script {
+                    echo "🔌 开始API测试..."
+                    echo "🎯 测试环境: ${BASE_URL}"
 
-                        def startTime = System.currentTimeMillis()
-
-                        bat """
-                            python -m pytest Shopping-Cart-master/tests/ -v \
-                            --html=api_test_report.html \
-                            --self-contained-html \
-                            --timeout=${PYTEST_TIMEOUT} \
-                            --junitxml=api_test_results.xml
-                        """
-
-                        def endTime = System.currentTimeMillis()
-                        def duration = (endTime - startTime) / 1000
-                        echo "📊 API测试执行时间: ${duration}秒"
-
-                        // 记录测试指标
-                        currentBuild.description = "API Tests - ${duration}s"
-                    }
+                    bat """
+                        python -m pytest Shopping-Cart-master/tests/ -v \
+                        --html=api_test_report.html \
+                        --self-contained-html \
+                        --timeout=${PYTEST_TIMEOUT}
+                    """
                 }
             }
             post {
                 always {
-                    // 发布测试报告
                     publishHTML([
                         allowMissing: true,
                         alwaysLinkToLastBuild: true,
@@ -126,33 +91,44 @@ pipeline {
                         reportFiles: 'api_test_report.html',
                         reportName: 'Python API Test Report'
                     ])
-                    // 发布JUnit测试结果
-                    junit 'api_test_results.xml'
                 }
             }
         }
 
-        stage('Performance Metrics') {
+        stage('E2E Tests') {
+            when {
+                expression { return env.RUN_E2E_TESTS == 'true' }
+            }
             steps {
-                timestamps {
-                    script {
-                        echo "📈 收集性能指标..."
+                script {
+                    echo "🎨 开始E2E测试..."
+                    echo "🎯 测试环境: ${BASE_URL}"
 
-                        // 读取测试结果文件获取测试数量
-                        def testResults = readFile('api_test_results.xml')
-                        def testCount = testResults.split('tests=')[1].split('"')[1]
-                        def failures = testResults.split('failures=')[1].split('"')[1]
-                        def skipped = testResults.split('skipped=')[1].split('"')[1]
+                    bat """
+                        set BASE_URL=${BASE_URL}
+                        set PYTHONIOENCODING=utf-8
 
-                        echo "📊 测试统计:"
-                        echo "   - 总测试数: ${testCount}"
-                        echo "   - 失败数: ${failures}"
-                        echo "   - 跳过数: ${skipped}"
-                        echo "   - 通过率: ${((testCount.toInteger() - failures.toInteger() - skipped.toInteger()) / testCount.toInteger() * 100).round(2)}%"
+                        echo 设置Chrome驱动...
+                        webdriver-manager chrome --quiet
 
-                        // 记录到构建描述
-                        currentBuild.description = "Tests: ${testCount} | Failures: ${failures} | Skipped: ${skipped}"
-                    }
+                        echo 直接运行E2E测试...
+                        python -m pytest Shopping-Cart-master/pytest_Selenium/end_to_end.py -v \
+                        --html=e2e_test_report.html \
+                        --self-contained-html \
+                        --timeout=60
+                    """
+                }
+            }
+            post {
+                always {
+                    publishHTML([
+                        allowMissing: true,
+                        alwaysLinkToLastBuild: true,
+                        keepAll: true,
+                        reportDir: '.',
+                        reportFiles: 'e2e_test_report.html',
+                        reportName: 'Python E2E Test Report'
+                    ])
                 }
             }
         }
@@ -160,76 +136,13 @@ pipeline {
 
     post {
         always {
-            timestamps {
-                script {
-                    def currentTime = new Date().format("yyyy-MM-dd HH:mm:ss")
-                    echo "🏁 流水线执行完成 - ${currentTime}"
-
-                    // 清理临时文件
-                    bat '''
-                        del /q test_files.txt 2>nul || echo "无需清理"
-                        del /q e2e_files.txt 2>nul || echo "无需清理"
-                    '''
-                }
-            }
+            echo "🏁 Python测试流水线执行完成"
         }
         success {
-            timestamps {
-                script {
-                    def duration = (currentBuild.duration / 1000 / 60).round(2)
-                    echo "🎉 所有测试通过！总耗时: ${duration}分钟"
-
-                    // 发送成功通知（可选）
-                    emailext (
-                        subject: "✅ SUCCESS: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]'",
-                        body: """
-                        <h2>构建成功</h2>
-                        <p><b>项目:</b> ${env.JOB_NAME}</p>
-                        <p><b>构建号:</b> ${env.BUILD_NUMBER}</p>
-                        <p><b>耗时:</b> ${currentBuild.durationString}</p>
-                        <p><b>测试环境:</b> ${BASE_URL}</p>
-                        <p><b>代码提交:</b> ${env.GIT_COMMIT}</p>
-                        <p><a href="${env.BUILD_URL}">查看构建详情</a></p>
-                        """,
-                        to: "developer@example.com"
-                    )
-                }
-            }
+            echo "🎉 所有Python测试通过！"
         }
         failure {
-            timestamps {
-                echo "❌ 测试失败，请检查报告"
-
-                // 发送失败通知（可选）
-                emailext (
-                    subject: "❌ FAILURE: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]'",
-                    body: """
-                    <h2>构建失败</h2>
-                    <p><b>项目:</b> ${env.JOB_NAME}</p>
-                    <p><b>构建号:</b> ${env.BUILD_NUMBER}</p>
-                    <p><b>失败阶段:</b> ${currentBuild.result}</p>
-                    <p><b>测试环境:</b> ${BASE_URL}</p>
-                    <p><a href="${env.BUILD_URL}">查看构建详情</a></p>
-                    """,
-                    to: "developer@example.com"
-                )
-            }
-        }
-        unstable {
-            timestamps {
-                echo "⚠️  测试不稳定，有测试用例失败"
-            }
-        }
-        changed {
-            timestamps {
-                script {
-                    if (currentBuild.previousBuild != null) {
-                        if (currentBuild.result != currentBuild.previousBuild.result) {
-                            echo "📊 构建状态变化: ${currentBuild.previousBuild.result} → ${currentBuild.result}"
-                        }
-                    }
-                }
-            }
+            echo "❌ 部分测试失败，请检查报告"
         }
     }
 }
