@@ -2,8 +2,10 @@ import pytest
 import requests
 from bs4 import BeautifulSoup
 import re
+import os
 
-BASE_URL = "http://localhost:5000"
+# 从环境变量读取BASE_URL
+BASE_URL = os.getenv('BASE_URL', 'http://localhost:5000')
 
 # 测试用户数据
 TEST_USER = {

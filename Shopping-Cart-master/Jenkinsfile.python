@@ -1,0 +1,59 @@
+pipeline {
+    agent any
+    
+    parameters {
+        choice(
+            name: 'BASE_URL',
+            choices: ['http://localhost:5000/', 'http://staging.example.com/'],
+            description: 'Target environment'
+        )
+    }
+    
+    stages {
+        stage('Checkout') {
+            steps {
+                git branch: 'main', 
+                    url: 'https://github.com/foreverlove0114/Shopping_cart_python.git'
+            }
+        }
+        
+        stage('Install Dependencies') {
+            steps {
+                script {
+                    // 直接使用系统Python
+                    bat "python --version"
+                    bat "pip install -r requirements.txt pytest pytest-html requests beautifulsoup4 selenium"
+                }
+            }
+        }
+        
+        stage('Run API Tests') {
+            steps {
+                bat 'python -m pytest test_routes/ -v --html=api_report.html --self-contained-html'
+            }
+        }
+        
+        stage('Run E2E Tests') {
+            steps {
+                bat 'python -m pytest Pages/end_to_end.py -v --html=e2e_report.html --self-contained-html'
+            }
+        }
+    }
+    
+    post {
+        always {
+            publishHTML([
+                allowMissing: true,
+                reportDir: '.',
+                reportFiles: 'api_report.html',
+                reportName: 'Python API Tests'
+            ])
+            publishHTML([
+                allowMissing: true, 
+                reportDir: '.',
+                reportFiles: 'e2e_report.html',
+                reportName: 'Python E2E Tests'
+            ])
+        }
+    }
+}

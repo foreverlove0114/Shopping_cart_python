@@ -7,12 +7,15 @@ from Pages.ProductPage import ProductPage
 from Pages.CartPage import CartPage
 from Pages.ProfilePage import ProfilePage, EditProfilePage
 from selenium.webdriver.common.by import By
+import os
 
 
 class TestECommerceE2E:
     @pytest.fixture(autouse=True)
-    def setup(self, browser, app_url):
+    def setup(self, browser):
         self.driver = browser
+        # 从环境变量读取BASE_URL
+        app_url = os.getenv('BASE_URL', 'http://localhost:5000')
         self.driver.get(app_url)
         self.home_page = HomePage(self.driver)
         yield

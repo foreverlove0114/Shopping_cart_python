@@ -1,10 +1,11 @@
 from http.client import responses
-
+import os
 import pytest
 import requests
 from bs4 import BeautifulSoup
 
-BASE_URL = "http://localhost:5000"
+# 从环境变量读取BASE_URL，支持Jenkins参数化
+BASE_URL = os.getenv('BASE_URL', 'http://localhost:5000')
 
 # 测试用户数据
 TEST_USER = {
@@ -67,12 +68,13 @@ def account_with_editprofile(logged_in_user):
     logged_in_user.get(f"{BASE_URL}/account/profile/edit")
     return logged_in_user
 
+
 def test_register_user(session):
     """测试用户注册功能"""
-    print("Testing user registration...")
+    print(f"🌐 测试环境: {BASE_URL}")
 
     response = session.post(
-        f"{BASE_URL}/register",
+        f"{BASE_URL}/register",  # 使用环境变量
         data=TEST_USER
     )
 
