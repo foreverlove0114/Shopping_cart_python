@@ -104,6 +104,14 @@ pipeline {
                     echo "🎨 开始E2E测试..."
                     echo "🎯 测试环境: ${BASE_URL}"
 
+                    // 调试：查找E2E测试文件
+                    bat '''
+                        echo 查找E2E测试文件...
+                        dir /s /b Shopping-Cart-master\\*end_to_end*.py
+                        dir /s /b Shopping-Cart-master\\*e2e*.py
+                        dir /s /b Shopping-Cart-master\\*test*.py | findstr pytest_Selenium
+                    '''
+
                     bat """
                         set BASE_URL=${BASE_URL}
                         python -m pytest Shopping-Cart-master/pytest_Selenium/ -v \
