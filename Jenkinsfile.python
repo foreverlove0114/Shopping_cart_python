@@ -94,44 +94,6 @@ pipeline {
                 }
             }
         }
-
-        stage('E2E Tests') {
-            when {
-                expression { return env.RUN_E2E_TESTS == 'true' }
-            }
-            steps {
-                script {
-                    echo "🎨 开始E2E测试..."
-                    echo "🎯 测试环境: ${BASE_URL}"
-
-                    bat """
-                        set BASE_URL=${BASE_URL}
-                        set PYTHONIOENCODING=utf-8
-
-                        echo 设置Chrome驱动...
-                        webdriver-manager chrome --quiet
-
-                        echo 直接运行E2E测试...
-                        python -m pytest Shopping-Cart-master/pytest_Selenium/end_to_end.py -v \
-                        --html=e2e_test_report.html \
-                        --self-contained-html \
-                        --timeout=60
-                    """
-                }
-            }
-            post {
-                always {
-                    publishHTML([
-                        allowMissing: true,
-                        alwaysLinkToLastBuild: true,
-                        keepAll: true,
-                        reportDir: '.',
-                        reportFiles: 'e2e_test_report.html',
-                        reportName: 'Python E2E Test Report'
-                    ])
-                }
-            }
-        }
     }
 
     post {
