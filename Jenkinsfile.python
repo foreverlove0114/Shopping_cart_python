@@ -67,18 +67,20 @@ pipeline {
                     echo "🔌 开始API测试..."
                     echo "🎯 测试环境: ${BASE_URL}"
 
-                    // 调试：显示目录结构
-                    bat 'dir /s test_*.py || echo "查找测试文件中..."'
+                    // 查找所有测试文件
+                    bat 'dir /s /b test_*.py > test_files.txt || echo "正在查找测试文件..."'
+                    bat 'type test_files.txt || echo "未找到测试文件"'
 
-                    // 运行API测试
+                    // 运行所有发现的测试
                     bat """
-                        python -m pytest tests/test_routes/ -v \
+                        python -m pytest tests/ -v \
                         --html=api_test_report.html \
                         --self-contained-html \
                         --timeout=${PYTEST_TIMEOUT}
                     """
                 }
             }
+        }
             post {
                 always {
                     publishHTML([
@@ -102,18 +104,20 @@ pipeline {
                     echo "🎨 开始E2E测试..."
                     echo "🎯 测试环境: ${BASE_URL}"
 
-                    // 调试：显示E2E测试文件
-                    bat 'dir /s *end_to_end* || echo "查找E2E测试文件中..."'
+                    // 查找E2E测试文件
+                    bat 'dir /s /b *end_to_end*.py > e2e_files.txt || echo "正在查找E2E测试文件..."'
+                    bat 'type e2e_files.txt || echo "未找到E2E测试文件"'
 
                     bat """
                         set BASE_URL=${BASE_URL}
-                        python -m pytest pytest_Selenium/end_to_end.py -v \
+                        python -m pytest pytest_Selenium/ -v \
                         --html=e2e_test_report.html \
                         --self-contained-html \
                         --timeout=60
                     """
                 }
             }
+        }
             post {
                 always {
                     publishHTML([
