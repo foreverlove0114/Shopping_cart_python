@@ -28,7 +28,7 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                git branch: 'master',  // ⬅️ 改为 master
+                git branch: 'master',
                     url: 'https://github.com/foreverlove0114/Shopping_cart_python.git'
                 echo "✅ 代码检出完成"
             }
@@ -43,13 +43,37 @@ pipeline {
 
         stage('Install Dependencies') {
             steps {
-                bat 'pip install -r requirements.txt pytest pytest-html requests beautifulsoup4 selenium'
+                script {
+                    echo "📦 安装Python依赖包..."
+
+                    // 先检查文件是否存在
+                    bat 'dir requirements.txt || echo "requirements.txt not found, installing packages individually"'
+
+                    // 如果requirements.txt存在就使用它，否则单独安装
+                    bat """
+                        if exist requirements.txt (
+                            pip install -r requirements.txt
+                        ) else (
+                            pip install pytest pytest-html requests beautifulsoup4 selenium webdriver-manager
+                        )
+                    """
+                }
             }
         }
 
         stage('API Tests') {
             steps {
-                bat "python -m pytest test_routes/ -v --html=api_test_report.html --self-contained-html --timeout=${PYTEST_TIMEOUT}"
+                script {
+                    echo "🔌 开始API测试..."
+                    echo "🎯 测试环境: ${BASE_URL}"
+
+                    bat """
+                        python -m pytest test_routes/ -v \
+                        --html=api_test_report.html \
+                        --self-contained-html \
+                        --timeout=${PYTEST_TIMEOUT}
+                    """
+                }
             }
             post {
                 always {
@@ -70,7 +94,18 @@ pipeline {
                 expression { return env.RUN_E2E_TESTS == 'true' }
             }
             steps {
-                bat "python -m pytest Pages/end_to_end.py -v --html=e2e_test_report.html --self-contained-html --timeout=60"
+                script {
+                    echo "🎨 开始E2E测试..."
+                    echo "🎯 测试环境: ${BASE_URL}"
+
+                    bat """
+                        set BASE_URL=${BASE_URL}
+                        python -m pytest Pages/end_to_end.py -v \
+                        --html=e2e_test_report.html \
+                        --self-contained-html \
+                        --timeout=60
+                    """
+                }
             }
             post {
                 always {
@@ -90,6 +125,12 @@ pipeline {
     post {
         always {
             echo "🏁 Python测试流水线执行完成"
+        }
+        success {
+            echo "🎉 所有Python测试通过！"
+        }
+        failure {
+            echo "❌ 部分测试失败，请检查报告"
         }
     }
 }
