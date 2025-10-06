@@ -80,7 +80,6 @@ pipeline {
                     """
                 }
             }
-        }
             post {
                 always {
                     publishHTML([
@@ -117,7 +116,6 @@ pipeline {
                     """
                 }
             }
-        }
             post {
                 always {
                     publishHTML([
