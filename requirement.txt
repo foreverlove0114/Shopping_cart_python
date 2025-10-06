@@ -2,12 +2,6 @@
 Flask>=2.0.0
 Werkzeug>=2.0.0
 
-# Database
-sqlite3
-
-# File Upload
-secure-filename
-
 # Testing Framework
 pytest>=7.0.0
 pytest-html>=3.0.0

@@ -47,13 +47,15 @@ pipeline {
                     echo "📦 安装Python依赖包..."
 
                     bat '''
-                        # 安装Flask和测试依赖
+                        echo 安装Flask和测试依赖...
                         pip install Flask Werkzeug pytest pytest-html pytest-timeout requests beautifulsoup4 selenium webdriver-manager python-dotenv
 
-                        # 如果有requirement.txt，也安装其中的依赖
+                        echo 检查requirement.txt...
                         if exist requirement.txt (
-                            echo "找到 requirement.txt，安装额外依赖..."
+                            echo 找到requirement.txt，安装额外依赖...
                             pip install -r requirement.txt
+                        ) else (
+                            echo 未找到requirement.txt
                         )
                     '''
 
