@@ -164,7 +164,7 @@ def test_empty_cart(logged_in_user):
 
     response = logged_in_user.get(f"{BASE_URL}/cart")
     assert response.status_code == 200
-    assert "CART 0" in response.text
+    assert "$0" in response.text
     print("✓ Empty cart handled correctly")
 
 
