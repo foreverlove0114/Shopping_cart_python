@@ -106,16 +106,21 @@ pipeline {
 
                     bat """
                         set BASE_URL=${BASE_URL}
-                        cd Shopping-Cart-master\\pytest_Selenium
-                        echo 使用run_test.py运行E2E测试...
-                        python run_test.py
+                        set PYTHONIOENCODING=utf-8
+
+                        echo 设置Chrome驱动...
+                        webdriver-manager chrome --quiet
+
+                        echo 直接运行E2E测试...
+                        python -m pytest Shopping-Cart-master/pytest_Selenium/end_to_end.py -v \
+                        --html=e2e_test_report.html \
+                        --self-contained-html \
+                        --timeout=60
                     """
                 }
             }
             post {
                 always {
-                    // 即使没有pytest报告，也创建一个简单的报告
-                    bat 'echo "E2E测试执行完成" > ..\\..\\e2e_test_report.html'
                     publishHTML([
                         allowMissing: true,
                         alwaysLinkToLastBuild: true,
@@ -127,7 +132,6 @@ pipeline {
                 }
             }
         }
-    }
 
     post {
         always {
