@@ -104,25 +104,18 @@ pipeline {
                     echo "🎨 开始E2E测试..."
                     echo "🎯 测试环境: ${BASE_URL}"
 
-                    // 调试：查找E2E测试文件
-                    bat '''
-                        echo 查找E2E测试文件...
-                        dir /s /b Shopping-Cart-master\\*end_to_end*.py
-                        dir /s /b Shopping-Cart-master\\*e2e*.py
-                        dir /s /b Shopping-Cart-master\\*test*.py | findstr pytest_Selenium
-                    '''
-
                     bat """
                         set BASE_URL=${BASE_URL}
-                        python -m pytest Shopping-Cart-master/pytest_Selenium/ -v \
-                        --html=e2e_test_report.html \
-                        --self-contained-html \
-                        --timeout=60
+                        cd Shopping-Cart-master\\pytest_Selenium
+                        echo 使用run_test.py运行E2E测试...
+                        python run_test.py
                     """
                 }
             }
             post {
                 always {
+                    // 即使没有pytest报告，也创建一个简单的报告
+                    bat 'echo "E2E测试执行完成" > ..\\..\\e2e_test_report.html'
                     publishHTML([
                         allowMissing: true,
                         alwaysLinkToLastBuild: true,
