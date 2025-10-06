@@ -4,56 +4,154 @@ pipeline {
     parameters {
         choice(
             name: 'BASE_URL',
-            choices: ['http://localhost:5000/', 'http://staging.example.com/'],
-            description: 'Target environment'
+            choices: ['http://localhost:5000/', 'http://staging.example.com/', 'http://prod.example.com/'],
+            description: 'Target environment for Python tests'
+        )
+        string(
+            name: 'PYTEST_TIMEOUT',
+            defaultValue: '30',
+            description: 'Pytest timeout in seconds'
+        )
+        booleanParam(
+            name: 'RUN_E2E_TESTS',
+            defaultValue: true,
+            description: 'Run end-to-end Selenium tests'
         )
     }
-    
+
+    // ❌ 移除这整个tools部分
+    // tools {
+    //     python 'Python39'
+    // }
+
+    environment {
+        BASE_URL = "${params.BASE_URL}"
+        PYTEST_TIMEOUT = "${params.PYTEST_TIMEOUT}"
+        RUN_E2E_TESTS = "${params.RUN_E2E_TESTS}"
+    }
+
     stages {
         stage('Checkout') {
             steps {
-                git branch: 'main', 
+                git branch: 'main',
                     url: 'https://github.com/foreverlove0114/Shopping_cart_python.git'
+                script {
+                    echo "✅ 代码检出完成"
+                    echo "📁 工作目录: ${env.WORKSPACE}"
+                }
             }
         }
-        
+
+        stage('Verify Python Environment') {
+            steps {
+                script {
+                    echo "🐍 检查Python环境..."
+                    bat "python --version"
+                    bat "pip --version"
+                    bat "where python"
+                    bat "where pip"
+                }
+            }
+        }
+
         stage('Install Dependencies') {
             steps {
                 script {
-                    // 直接使用系统Python
-                    bat "python --version"
+                    echo "📦 安装Python依赖..."
                     bat "pip install -r requirements.txt pytest pytest-html requests beautifulsoup4 selenium"
                 }
             }
         }
-        
+
         stage('Run API Tests') {
             steps {
-                bat 'python -m pytest test_routes/ -v --html=api_report.html --self-contained-html'
+                script {
+                    echo "🔌 开始API测试..."
+                    echo "🎯 测试环境: ${BASE_URL}"
+
+                    bat """
+                        python -m pytest test_routes/ -v \
+                        --html=api_test_report.html \
+                        --self-contained-html \
+                        --timeout=${PYTEST_TIMEOUT} \
+                        -o log_cli=true
+                    """
+                }
+            }
+            post {
+                always {
+                    publishHTML([
+                        allowMissing: true,
+                        alwaysLinkToLastBuild: true,
+                        keepAll: true,
+                        reportDir: '.',
+                        reportFiles: 'api_test_report.html',
+                        reportName: 'Python API Test Report'
+                    ])
+                }
             }
         }
-        
+
         stage('Run E2E Tests') {
+            when {
+                expression { return env.RUN_E2E_TESTS == 'true' }
+            }
             steps {
-                bat 'python -m pytest Pages/end_to_end.py -v --html=e2e_report.html --self-contained-html'
+                script {
+                    echo "🎨 开始E2E测试..."
+                    echo "🎯 测试环境: ${BASE_URL}"
+
+                    bat """
+                        set BASE_URL=${BASE_URL}
+                        python -m pytest Pages/end_to_end.py -v \
+                        --html=e2e_test_report.html \
+                        --self-contained-html \
+                        --timeout=60 \
+                        -o log_cli=true
+                    """
+                }
+            }
+            post {
+                always {
+                    publishHTML([
+                        allowMissing: true,
+                        alwaysLinkToLastBuild: true,
+                        keepAll: true,
+                        reportDir: '.',
+                        reportFiles: 'e2e_test_report.html',
+                        reportName: 'Python E2E Test Report'
+                    ])
+                }
+            }
+        }
+
+        stage('Test Summary') {
+            steps {
+                script {
+                    echo "📊 测试执行完成"
+                    echo "🌐 测试环境: ${BASE_URL}"
+                    echo "⏱️  API超时: ${PYTEST_TIMEOUT}秒"
+                    echo "🎨  E2E测试: ${RUN_E2E_TESTS}"
+                }
             }
         }
     }
-    
+
     post {
         always {
-            publishHTML([
-                allowMissing: true,
-                reportDir: '.',
-                reportFiles: 'api_report.html',
-                reportName: 'Python API Tests'
-            ])
-            publishHTML([
-                allowMissing: true, 
-                reportDir: '.',
-                reportFiles: 'e2e_report.html',
-                reportName: 'Python E2E Tests'
-            ])
+            script {
+                echo "🏁 Python测试流水线执行完成"
+            }
+        }
+        success {
+            script {
+                echo "🎉 所有Python测试通过！"
+            }
+        }
+        failure {
+            script {
+                echo "❌ 部分测试失败，请检查报告"
+            }
         }
     }
 }
