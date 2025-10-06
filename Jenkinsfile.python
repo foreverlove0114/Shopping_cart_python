@@ -4,7 +4,7 @@ pipeline {
     parameters {
         choice(
             name: 'BASE_URL',
-            choices: ['http://localhost:5000/', 'http://staging.example.com/', 'http://prod.example.com/'],
+            choices: ['http://localhost:5000', 'http://staging.example.com', 'http://prod.example.com'],
             description: 'Target environment for Python tests'
         )
         string(
@@ -46,17 +46,19 @@ pipeline {
                 script {
                     echo "📦 安装Python依赖包..."
 
-                    // 先检查文件是否存在
-                    bat 'dir requirements.txt || echo "requirements.txt not found, installing packages individually"'
-
-                    // 如果requirements.txt存在就使用它，否则单独安装
-                    bat """
-                        if exist requirements.txt (
-                            pip install -r requirements.txt
+                    // 使用正确的文件名 requirement.txt
+                    bat '''
+                        if exist requirement.txt (
+                            echo "找到 requirement.txt，安装依赖..."
+                            pip install -r requirement.txt
                         ) else (
-                            pip install pytest pytest-html requests beautifulsoup4 selenium webdriver-manager
+                            echo "未找到 requirement.txt，单独安装依赖包..."
+                            pip install pytest pytest-html pytest-timeout requests beautifulsoup4 selenium webdriver-manager python-dotenv
                         )
-                    """
+                    '''
+
+                    // 验证关键包是否安装成功
+                    bat 'pip list | findstr pytest'
                 }
             }
         }
@@ -68,7 +70,7 @@ pipeline {
                     echo "🎯 测试环境: ${BASE_URL}"
 
                     bat """
-                        python -m pytest test_routes/ -v \
+                        python -m pytest test_auth_routes.py test_cart_routes.py -v \
                         --html=api_test_report.html \
                         --self-contained-html \
                         --timeout=${PYTEST_TIMEOUT}
@@ -100,7 +102,7 @@ pipeline {
 
                     bat """
                         set BASE_URL=${BASE_URL}
-                        python -m pytest Pages/end_to_end.py -v \
+                        python -m pytest end_to_end.py -v \
                         --html=e2e_test_report.html \
                         --self-contained-html \
                         --timeout=60
