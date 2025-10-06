@@ -19,11 +19,6 @@ pipeline {
         )
     }
 
-    // ❌ 移除这整个tools部分
-    // tools {
-    //     python 'Python39'
-    // }
-
     environment {
         BASE_URL = "${params.BASE_URL}"
         PYTEST_TIMEOUT = "${params.PYTEST_TIMEOUT}"
@@ -33,53 +28,28 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                git branch: 'main',
+                git branch: 'master',  // ⬅️ 改为 master
                     url: 'https://github.com/foreverlove0114/Shopping_cart_python.git'
-                script {
-                    echo "✅ 代码检出完成"
-                    echo "📁 工作目录: ${env.WORKSPACE}"
-                }
+                echo "✅ 代码检出完成"
             }
         }
 
-        stage('Verify Python Environment') {
+        stage('Verify Python') {
             steps {
-                script {
-                    echo "🐍 检查Python环境..."
-                    bat "python --version"
-                    bat "pip --version"
-                    bat "where python"
-                    bat "where pip"
-                }
+                bat 'python --version'
+                bat 'pip --version'
             }
         }
 
         stage('Install Dependencies') {
             steps {
-                script {
-                    // 尝试不同的Python路径
-                    bat """
-                        "C:\\Python39\\python.exe" --version || python --version || echo "Python not found"
-                        "C:\\Python39\\Scripts\\pip.exe" install -r requirements.txt || pip install -r requirements.txt
-                    """
-                }
+                bat 'pip install -r requirements.txt pytest pytest-html requests beautifulsoup4 selenium'
             }
         }
 
-        stage('Run API Tests') {
+        stage('API Tests') {
             steps {
-                script {
-                    echo "🔌 开始API测试..."
-                    echo "🎯 测试环境: ${BASE_URL}"
-
-                    bat """
-                        python -m pytest test_routes/ -v \
-                        --html=api_test_report.html \
-                        --self-contained-html \
-                        --timeout=${PYTEST_TIMEOUT} \
-                        -o log_cli=true
-                    """
-                }
+                bat "python -m pytest test_routes/ -v --html=api_test_report.html --self-contained-html --timeout=${PYTEST_TIMEOUT}"
             }
             post {
                 always {
@@ -95,24 +65,12 @@ pipeline {
             }
         }
 
-        stage('Run E2E Tests') {
+        stage('E2E Tests') {
             when {
                 expression { return env.RUN_E2E_TESTS == 'true' }
             }
             steps {
-                script {
-                    echo "🎨 开始E2E测试..."
-                    echo "🎯 测试环境: ${BASE_URL}"
-
-                    bat """
-                        set BASE_URL=${BASE_URL}
-                        python -m pytest Pages/end_to_end.py -v \
-                        --html=e2e_test_report.html \
-                        --self-contained-html \
-                        --timeout=60 \
-                        -o log_cli=true
-                    """
-                }
+                bat "python -m pytest Pages/end_to_end.py -v --html=e2e_test_report.html --self-contained-html --timeout=60"
             }
             post {
                 always {
@@ -127,34 +85,11 @@ pipeline {
                 }
             }
         }
-
-        stage('Test Summary') {
-            steps {
-                script {
-                    echo "📊 测试执行完成"
-                    echo "🌐 测试环境: ${BASE_URL}"
-                    echo "⏱️  API超时: ${PYTEST_TIMEOUT}秒"
-                    echo "🎨  E2E测试: ${RUN_E2E_TESTS}"
-                }
-            }
-        }
     }
 
     post {
         always {
-            script {
-                echo "🏁 Python测试流水线执行完成"
-            }
-        }
-        success {
-            script {
-                echo "🎉 所有Python测试通过！"
-            }
-        }
-        failure {
-            script {
-                echo "❌ 部分测试失败，请检查报告"
-            }
+            echo "🏁 Python测试流水线执行完成"
         }
     }
 }
