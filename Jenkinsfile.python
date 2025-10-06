@@ -19,9 +19,10 @@ pipeline {
         )
     }
 
-    tools {
-        python 'Python39'  // 需要在Jenkins中配置
-    }
+    // ❌ 移除这整个tools部分
+    // tools {
+    //     python 'Python39'
+    // }
 
     environment {
         BASE_URL = "${params.BASE_URL}"
@@ -41,15 +42,26 @@ pipeline {
             }
         }
 
+        stage('Verify Python Environment') {
+            steps {
+                script {
+                    echo "🐍 检查Python环境..."
+                    bat "python --version"
+                    bat "pip --version"
+                    bat "where python"
+                    bat "where pip"
+                }
+            }
+        }
+
         stage('Install Dependencies') {
             steps {
                 script {
-                    echo "🐍 安装Python依赖..."
-                    bat "pip install -r requirements.txt pytest pytest-html requests beautifulsoup4 selenium"
-
-                    // 检查安装结果
-                    bat "python --version"
-                    bat "pytest --version"
+                    // 尝试不同的Python路径
+                    bat """
+                        "C:\\Python39\\python.exe" --version || python --version || echo "Python not found"
+                        "C:\\Python39\\Scripts\\pip.exe" install -r requirements.txt || pip install -r requirements.txt
+                    """
                 }
             }
         }
@@ -92,7 +104,6 @@ pipeline {
                     echo "🎨 开始E2E测试..."
                     echo "🎯 测试环境: ${BASE_URL}"
 
-                    // 设置环境变量供E2E测试使用
                     bat """
                         set BASE_URL=${BASE_URL}
                         python -m pytest Pages/end_to_end.py -v \
@@ -124,7 +135,6 @@ pipeline {
                     echo "🌐 测试环境: ${BASE_URL}"
                     echo "⏱️  API超时: ${PYTEST_TIMEOUT}秒"
                     echo "🎨  E2E测试: ${RUN_E2E_TESTS}"
-                    echo "📁 工作空间: ${env.WORKSPACE}"
                 }
             }
         }
@@ -134,25 +144,16 @@ pipeline {
         always {
             script {
                 echo "🏁 Python测试流水线执行完成"
-                // 清理临时文件
-                bat "del /q *.log || echo No log files to delete"
             }
         }
         success {
             script {
                 echo "🎉 所有Python测试通过！"
-                // 可以在这里添加通知，比如邮件、Slack等
             }
         }
         failure {
             script {
                 echo "❌ 部分测试失败，请检查报告"
-                // 失败通知
-            }
-        }
-        unstable {
-            script {
-                echo "⚠️ 测试结果不稳定，可能有闪烁测试"
             }
         }
     }
