@@ -47,16 +47,20 @@ pipeline {
                     echo "📦 安装Python依赖包..."
 
                     bat '''
+                        # 安装Flask和测试依赖
+                        pip install Flask Werkzeug pytest pytest-html pytest-timeout requests beautifulsoup4 selenium webdriver-manager python-dotenv
+
+                        # 如果有requirement.txt，也安装其中的依赖
                         if exist requirement.txt (
-                            echo "找到 requirement.txt，安装依赖..."
+                            echo "找到 requirement.txt，安装额外依赖..."
                             pip install -r requirement.txt
-                        ) else (
-                            echo "未找到 requirement.txt，单独安装依赖包..."
-                            pip install pytest pytest-html pytest-timeout requests beautifulsoup4 selenium webdriver-manager python-dotenv
                         )
                     '''
 
+                    // 验证安装
+                    bat 'pip list | findstr Flask'
                     bat 'pip list | findstr pytest'
+                    bat 'pip list | findstr requests'
                 }
             }
         }
@@ -67,10 +71,6 @@ pipeline {
                     echo "🔌 开始API测试..."
                     echo "🎯 测试环境: ${BASE_URL}"
 
-                    // 查看当前目录结构
-                    bat 'dir'
-
-                    // 运行API测试 - 使用正确的路径
                     bat """
                         python -m pytest Shopping-Cart-master/tests/ -v \
                         --html=api_test_report.html \
@@ -102,7 +102,6 @@ pipeline {
                     echo "🎨 开始E2E测试..."
                     echo "🎯 测试环境: ${BASE_URL}"
 
-                    // 运行E2E测试 - 使用正确的路径
                     bat """
                         set BASE_URL=${BASE_URL}
                         python -m pytest Shopping-Cart-master/pytest_Selenium/ -v \
