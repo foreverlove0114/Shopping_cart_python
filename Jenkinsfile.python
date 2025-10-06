@@ -46,7 +46,6 @@ pipeline {
                 script {
                     echo "📦 安装Python依赖包..."
 
-                    // 使用正确的文件名 requirement.txt
                     bat '''
                         if exist requirement.txt (
                             echo "找到 requirement.txt，安装依赖..."
@@ -57,7 +56,6 @@ pipeline {
                         )
                     '''
 
-                    // 验证关键包是否安装成功
                     bat 'pip list | findstr pytest'
                 }
             }
@@ -69,8 +67,12 @@ pipeline {
                     echo "🔌 开始API测试..."
                     echo "🎯 测试环境: ${BASE_URL}"
 
+                    // 调试：显示目录结构
+                    bat 'dir /s test_*.py || echo "查找测试文件中..."'
+
+                    // 运行API测试
                     bat """
-                        python -m pytest test_auth_routes.py test_cart_routes.py -v \
+                        python -m pytest tests/test_routes/ -v \
                         --html=api_test_report.html \
                         --self-contained-html \
                         --timeout=${PYTEST_TIMEOUT}
@@ -100,9 +102,12 @@ pipeline {
                     echo "🎨 开始E2E测试..."
                     echo "🎯 测试环境: ${BASE_URL}"
 
+                    // 调试：显示E2E测试文件
+                    bat 'dir /s *end_to_end* || echo "查找E2E测试文件中..."'
+
                     bat """
                         set BASE_URL=${BASE_URL}
-                        python -m pytest end_to_end.py -v \
+                        python -m pytest pytest_Selenium/end_to_end.py -v \
                         --html=e2e_test_report.html \
                         --self-contained-html \
                         --timeout=60
