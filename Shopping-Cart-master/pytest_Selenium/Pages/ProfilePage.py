@@ -29,7 +29,7 @@ class EditProfilePage(BasePage):
     CITY_INPUT = (By.NAME, "city")
     FIRSTNAME_INPUT = (By.NAME, "firstName")
     LASTNAME_INPUT = (By.NAME, "lastName")
-    SUBMIT_BUTTON = (By.CSS_SELECTOR, "input[type='submit']")
+    SUBMIT_BUTTON = (By.CSS_SELECTOR, "input[value='Save']")
     SUCCESS_MESSAGE = (By.XPATH, "//*[contains(text(), 'Success') or contains(text(), 'Saved')]")
 
     def __init__(self, driver):

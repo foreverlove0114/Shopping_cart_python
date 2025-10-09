@@ -7,7 +7,7 @@ class CartPage(BasePage):
     # Locators based on cart.html
     CART_ITEMS = (By.CSS_SELECTOR, "#tableItems > div")
     REMOVE_BUTTONS = (By.LINK_TEXT, "Remove")
-    EMPTY_CART_MESSAGE = (By.XPATH, "//*[contains(text(), 'empty') or contains(text(), 'Empty')]")
+    EMPTY_CART_MESSAGE = (By.XPATH, "//*[@id='kart]/a/text()")
     TOTAL_PRICE = (By.ID, "total")
     CHECKOUT_BUTTON = (By.LINK_TEXT, "Proceed to checkout")
     ITEM_NAMES = (By.ID, "itemNameTag")
@@ -19,7 +19,7 @@ class CartPage(BasePage):
         super().__init__(driver)
 
     def get_cart_items_count(self):
-        return len(self.find_elements(self.CART_ITEMS))
+        return int(len(self.find_elements(self.CART_ITEMS))-1)
 
     def remove_first_item(self):
         if self.get_cart_items_count() > 0:

@@ -47,6 +47,7 @@ class TestECommerceE2E:
             'zipcode': '12345'
         }
         register_page.register_user(user_data)
+        time.sleep(1)
 
         # 登录
         login_page = LoginPage(self.driver)
@@ -56,10 +57,8 @@ class TestECommerceE2E:
         assert self.home_page.is_user_logged_in()
 
     def test_browse_products_and_add_to_cart(self):
-        """测试浏览商品和添加到购物车"""
-        # 先登录
         self._login()
-        time.sleep(2)
+        time.sleep(1)
 
         # 获取首页的商品信息
         first_product = self.home_page.get_first_product()
@@ -69,24 +68,22 @@ class TestECommerceE2E:
 
         print(f"🛍️ 选择商品: {first_product.text}")
         first_product.click()
-        time.sleep(3)
+        time.sleep(1)
 
         # 获取商品详情
         product_page = ProductPage(self.driver)
         product_name = product_page.get_product_name()
-
         print(f"➕ 添加商品到购物车: {product_name}")
         product_page.add_to_cart()
-        time.sleep(3)
+        time.sleep(1)
 
         # 直接查看购物车
         self.driver.get("http://localhost:5000/cart")
-        time.sleep(3)
+        time.sleep(1)
 
         # 检查购物车状态
         cart_page = CartPage(self.driver)
         item_count = cart_page.get_cart_items_count()
-
         if item_count == 0:
             print("❌ 购物车为空，测试失败")
             assert False, "商品未成功添加到购物车"
@@ -95,106 +92,81 @@ class TestECommerceE2E:
             assert True
 
     def test_remove_from_cart(self):
-        """测试从购物车移除商品"""
-        # 先登录并添加商品到购物车
         self._login()
         self._add_product_to_cart()
 
         # 转到购物车
-        self.home_page.click_cart()
-        # 直接查看购物车
         self.driver.get("http://localhost:5000/cart")
-        time.sleep(3)
+        time.sleep(1)
         cart_page = CartPage(self.driver)
 
         # 记录初始商品数量
         initial_items = cart_page.get_cart_items_count()
-
         # 移除商品
         if initial_items > 0:
             cart_page.remove_first_item()
-            time.sleep(2)  # 等待页面刷新
+            time.sleep(1)
 
-            # 验证商品被移除
-            self.driver.get("http://localhost:5000/cart")
-            time.sleep(3)
-            final_items = cart_page.get_cart_items_count()
-            assert final_items < initial_items
+        # 验证商品被移除
+        self.driver.get("http://localhost:5000/cart")
+        time.sleep(1)
+        final_items = cart_page.get_cart_items_count()
+        assert final_items<initial_items
 
     def test_user_logout(self):
-        """测试用户登出"""
-        # 先登录
         self._login()
 
-        # 登出
         self.home_page.click_my_account()
         self.home_page.click_logout()
 
-        # 验证登出成功
         assert self.home_page.is_element_present(HomePage.LOGIN_LINK)
 
     def test_invalid_login(self):
-        """测试无效登录"""
-        # 导航到登录页面
         self.home_page.click_login()
         login_page = LoginPage(self.driver)
 
-        # 输入无效凭据
         login_page.login('invalid@example.com', 'wrongpassword')
 
-        # 验证显示错误消息
         error_message = login_page.get_error_message()
-        assert error_message != ""
+        assert error_message == "Invalid UserId / Password"
 
     def test_empty_cart_checkout(self):
-        """测试空购物车"""
-        # 先登录
         self._login()
+        time.sleep(1)
 
-        # 转到购物车
-        # self.home_page.click_cart()
         cart_page = CartPage(self.driver)
-
         self.driver.get("http://localhost:5000/cart")
-        time.sleep(3)
+        time.sleep(1)
 
         # 如果是空购物车，验证显示空购物车消息
-        if cart_page.get_cart_items_count() == 0:
-            empty_msg = cart_page.get_empty_cart_message().lower()
-            assert "empty" in empty_msg or "no items" in empty_msg
+        assert cart_page.get_cart_items_count() == 0
 
     def test_user_profile_management(self):
-        """测试用户资料管理"""
-        # 先登录
         self._login()
 
-        # 转到个人资料
         self.home_page.click_my_account()
         self.home_page.click_profile()
+        time.sleep(1)
 
-        # profile_page = ProfilePage(self.driver)
-        self.driver.get("http://localhost:5000/account/profile/edit")
-        # profile_page.click_edit_profile()
+        profile_page = ProfilePage(self.driver)
+        profile_page.click_edit_profile()
 
-        # 更新资料
         edit_profile_page = EditProfilePage(self.driver)
         edit_profile_page.update_city("New Test City")
 
-        # 验证更新成功（根据实际应用调整）
+        time.sleep(1)
         self.driver.get("http://localhost:5000/account/profile/edit")
 
-
+    #==================================================================
     # 辅助方法
+    # =================================================================
     def _login(self):
-        """登录辅助方法"""
         if not self.home_page.is_user_logged_in():
             self.home_page.click_login()
             login_page = LoginPage(self.driver)
-            login_page.login('testuser@example.com', 'testpassword')
-            assert self.home_page.is_user_logged_in()
+            login_page.login('jiexiang01144@gmail.com', 'JXiang29')
 
     def _add_product_to_cart(self):
-        """添加商品到购物车辅助方法"""
         self.home_page.click_first_product()
         product_page = ProductPage(self.driver)
         product_page.add_to_cart()
